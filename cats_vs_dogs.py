@@ -5,15 +5,16 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential
 from keras.layers import Convolution2D, MaxPooling2D, Conv2D
 from keras.layers import Activation, Dropout, Flatten, Dense
+from keras.models import model_from_json
 
 
 #Dimension de la imagen
 img_width, img_height = 150, 150
 #Carpeta que almacena las imagenes
 #con estas se entrenara la red
-train_data_dir = '/data/train'
+train_data_dir = 'data/train'
 #carpeta con las muestras de validacion
-validation_data_dir = '/data/validation'
+validation_data_dir = 'data/validation'
 #numero de imagenes que se concideran para la validacion
 train_samples = 2000
 #numero de images que se cocideran para la validacion
@@ -29,12 +30,21 @@ model= Sequential()
 # nb_filter: Number of convolution filters to use.
 # nb_row: Number of rows in the convolution kernel.
 # nb_col: Number of columns in the convolution kernel.
-model.add(Conv2D(32, (3, 3), input_shape=(img_width, img_height, 3), activation='relu', data_format='channels_first'))
+model.add(Conv2D(32, (3, 3), input_shape=(img_width, img_height, 3)))
+model.add(Activation('relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+model.add(Conv2D(32, (3, 3), activation='relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
 model.add(Conv2D(64, (3, 3), activation='relu'))
 model.add(MaxPooling2D(pool_size=(2, 2)))
+
 model.add(Flatten())
-model.add(Dense(1))
+model.add(Dense(64))
+model.add(Activation('relu'))
 model.add(Dropout(0.5))
+model.add(Dense(1))
 model.add(Activation('sigmoid'))
 
 
@@ -76,15 +86,19 @@ validation_generator =  test_datagen.flow_from_directory(
 # y llevará algún tiempo ejecutar este paso.
 model.fit_generator(
         train_generator,
-        steps_per_epoch=train_samples,
-        epochs = epoch,
-        verbose = 1,
-        validation_data = validation_generator,
-        validation_steps=validation_samples)
+        samples_per_epoch=train_samples,
+        nb_epoch=epoch,
+        validation_data=validation_generator,
+        nb_val_samples=validation_samples)
+
+
 
 # for e in range(40):
 #     score = model.evaluate(validation_generator, verbose=0)
 #     print ('Test loss:', score[0])
 #     print ('Test accuracy:', score[1])
-
-model.save_weights('trial.h5')
+clssf = model.to_json()
+with open("CatOrDog.json", "w") as json_file:
+    json_file.write(clssf)
+model.save_weights('CorDweights.h5')
+print("model saved to disk....")
